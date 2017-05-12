@@ -1,22 +1,42 @@
 #!/usr/bin/env python3
 
+# Requires Pygame, gtts, pyttsx
+
 import os.path
 import random
-import datetime
-from pygame import mixer
-from pygame import time
+import webbrowser
+import socket
+import pyttsx
+import logging
+from time import sleep, strftime
+from pygame import mixer, time
 from gtts import gTTS
 
 
-def greetings():
-    hours = datetime.datetime.now().hour
+def internet_connection(host="8.8.8.8", port=53, timeout=3):
+    """
+    Host: 8.8.8.8 (google-public-dns-a.google.com)
+    OpenPort: 53/tcp
+    Service: domain (DNS/TCP)
+    """
+    try:
+        socket.setdefaulttimeout(timeout)
+        socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect((host, port))
+        return True
+    except Exception as e:
+        logging.exception(e)
+        return False
 
-    if random.randint(1, 10) < 6:
+
+def greetings():
+    day_time = int(strftime('%H'))
+
+    if random.random() < 0.5:
         speak("At your service sir")
     else:
-        if hours < 12:
+        if day_time < 12:
             speak('Good morning')
-        elif 12 <= hours < 18:
+        elif 12 <= day_time < 18:
             speak('Good afternoon')
         else:
             speak('Good evening')
@@ -25,6 +45,11 @@ def greetings():
 def speak(audio_string):
     voice_path = "lib/voice/"
     mixer.pre_init(24000, -16, 1, 512)
+
+    def speak_no_internet(audio):
+        engine = pyttsx.init()
+        engine.say(audio)
+        engine.runAndWait()
 
     def new_audio(name, audio):
         tts = gTTS(text=audio, lang='en-us', slow=False)
@@ -41,11 +66,29 @@ def speak(audio_string):
             time.Clock().tick(10)
         print(audio_string)
     else:
-        new_audio(audio_name, audio_string)
+        if internet_connection():
+            new_audio(audio_name, audio_string)
+        else:
+            speak_no_internet(audio_string)
+
+
+def brain(request):
+    if "where is" in request.lower():
+        place = request.replace("?", "").split(" ", 2)
+        if request.split()[2]:
+            speak("Here's what i found")
+            webbrowser.open("https://www.google.com/maps/place/" + place[2] + "/&amp")
+        else:
+            speak("Please enter place")
+    elif "what time is it" in request.lower():
+        print(strftime('%H:%M'))
 
 
 def main():
+    sleep(1)
     greetings()
+    while True:
+        brain(input())
 
 
 if __name__ == '__main__':

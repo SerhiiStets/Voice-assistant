@@ -1,2 +1,6 @@
 __pycache__
 store
+lib/voice/good_afternoon.mp3
+lib/voice/good_evening.mp3
+lib/voice/good_morning.mp3
+lib/voice/here's_what_i_found.mp3
